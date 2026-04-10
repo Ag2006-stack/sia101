@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Students In Each Country</h1>
+    <button onclick="loadStudent()">Display Students</button>
+    <ul id="list"></ul>
+
+    <h1>Add Student</h1>
+    <input type="text"  id="name" name="name" placeholder="name">
+    <input type="number" id="yearLevel"  name="yearLevel" placeholder="yearLevel">
+    <button onclick="addStudent()">Submit</button>
+    
+</body>
+</html>
+
+<script>
+async function loadStudent() {
+        const res = await fetch('http://localhost:3000/api/students')
+        const data = await res.json()
+
+        const list = document.getElementById('list')
+        list.innerHTML = ''
+
+        data.forEach((students) => {
+            const li = document.createElement('li')
+            li.textContent = `NAME: ${students.name} \n YEAR LEVEL: ${students.yearLevel}`
+            list.appendChild(li)
+        });
+}
+
+    async function addStudent(){
+        const name = document.getElementById('name').value
+        const yearLevel = document.getElementById('yearLevel').value
+        const res = await fetch('http://localhost:3000/api/students', 
+        {
+            method: 'POST',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({name,yearLevel})
+        }
+    )
+        const data = await res.json()
+        console.log(data)
+        loadStudent()
+    }
+</script>
