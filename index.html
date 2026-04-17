@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gasal Computer Store</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+        .dashboard { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        .box { background: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #334155; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        button { background: #3b82f6; border: none; font-weight: bold; cursor: pointer; }
+        .product { background: #334155; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; }
+        .price { color: #10b981; }
+    </style>
+</head>
+<body>
+    <h1>🖥️ Gasal Computer Store Admin</h1>
+    <div id="stats" style="margin-bottom: 20px;"></div>
+    <div class="dashboard">
+        <div class="box">
+            <form id="addForm">
+                <input type="text" id="name" placeholder="Component Name" required>
+                <select id="category">
+                    <option value="CPU">CPU</option>
+                    <option value="GPU">GPU</option>
+                    <option value="RAM">RAM</option>
+                    <option value="Storage">Storage</option>
+                </select>
+                <input type="number" id="price" placeholder="Price" required>
+                <input type="number" id="stock" placeholder="Stock" required>
+                <button type="submit">Add Product</button>
+            </form>
+            <hr style="border: 0.5px solid #334155; margin: 20px 0;">
+            <input type="text" id="search" placeholder="Search...">
+        </div>
+        <div class="box">
+            <div id="list"></div>
+        </div>
+    </div>
+    <script>
+        async function refresh() {
+            const [pRes, sRes] = await Promise.all([fetch('/api/products'), fetch('/api/stats')])
+            const products = await pRes.json()
+            const stats = await sRes.json()
+            document.getElementById('stats').innerText = `Models: ${stats.totalModels} | Low Stock: ${stats.lowStock}`
+            document.getElementById('list').innerHTML = products.map(p => `
+                <div class="product">
+                    <div><strong>${p.name}</strong><br><small>Stock: ${p.stock}</small></div>
+                    <div><span class="price">₱${p.price.toLocaleString()}</span>
+                    <button onclick="del(${p.id})" style="width: auto; padding: 2px 8px; margin-left: 10px; background: #ef4444;">X</button></div>
+                </div>
+            `).join('')
+        }
+        document.getElementById('addForm').onsubmit = async (e) => {
+            e.preventDefault()
+            const body = {
+                name: document.getElementById('name').value,
+                category: document.getElementById('category').value,
+                price: document.getElementById('price').value,
+                stock: document.getElementById('stock').value
+            }
+            await fetch('/api/products', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            })
+            e.target.reset()
+            refresh()
+        }
+        document.getElementById('search').oninput = async (e) => {
+            const res = await fetch(`/api/search?name=${e.target.value}`)
+            const data = await res.json()
+            document.getElementById('list').innerHTML = data.map(p => `<div class="product"><strong>${p.name}</strong> <span>₱${p.price}</span></div>`).join('')
+        }
+        async function del(id) {
+            await fetch(`/api/products/${id}`, { method: 'DELETE' })
+            refresh()
+        }
+        refresh()
+    </script>
+</body>
+</html>
